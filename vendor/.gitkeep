@@ -1,0 +1,4 @@
+This directory is reserved for Composer dependencies.
+
+To initialize later:
+  composer init
