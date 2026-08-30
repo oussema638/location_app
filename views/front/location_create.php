@@ -12,11 +12,11 @@ require APP_ROOT . '/views/layout/header.php';
             <div class="form-row">
                 <label>
                     Date de début
-                    <input type="date" name="date_debut" required min="<?= date('Y-m-d') ?>">
+                    <input type="date" name="date_debut">
                 </label>
                 <label>
                     Date de fin
-                    <input type="date" name="date_fin" required min="<?= date('Y-m-d') ?>">
+                    <input type="date" name="date_fin">
                 </label>
             </div>
             <p id="montant-estime" class="hint">Sélectionnez les dates pour estimer le montant.</p>

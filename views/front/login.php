@@ -9,11 +9,11 @@ require APP_ROOT . '/views/layout/header.php';
             <?= csrf_field() ?>
             <label>
                 Email
-                <input type="email" name="email" value="<?= old('email') ?>" required>
+                <input type="text" name="email" value="<?= old('email') ?>">
             </label>
             <label>
                 Mot de passe
-                <input type="password" name="password" required>
+                <input type="password" name="password">
             </label>
             <button class="btn btn-primary" type="submit">Se connecter</button>
         </form>

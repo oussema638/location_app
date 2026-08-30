@@ -10,20 +10,20 @@ require APP_ROOT . '/views/layout/header.php';
             <div class="form-row">
                 <label>
                     Nom
-                    <input type="text" name="nom" value="<?= old('nom') ?>" required>
+                    <input type="text" name="nom" value="<?= old('nom') ?>">
                 </label>
                 <label>
                     Prénom
-                    <input type="text" name="prenom" value="<?= old('prenom') ?>" required>
+                    <input type="text" name="prenom" value="<?= old('prenom') ?>">
                 </label>
             </div>
             <label>
                 Email
-                <input type="email" name="email" value="<?= old('email') ?>" required>
+                <input type="text" name="email" value="<?= old('email') ?>">
             </label>
             <label>
                 Mot de passe
-                <input type="password" name="password" minlength="6" required>
+                <input type="password" name="password">
             </label>
             <button class="btn btn-primary" type="submit">S'inscrire</button>
         </form>

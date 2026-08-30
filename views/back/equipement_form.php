@@ -7,7 +7,7 @@ require APP_ROOT . '/views/layout/admin_header.php';
     <input type="hidden" name="id" value="<?= (int) ($equipement['id'] ?? 0) ?>">
     <label>
         Nom
-        <input type="text" name="nom" value="<?= e($equipement['nom'] ?? '') ?>" required>
+        <input type="text" name="nom" value="<?= e($equipement['nom'] ?? '') ?>">
     </label>
     <label>
         Description
@@ -16,15 +16,15 @@ require APP_ROOT . '/views/layout/admin_header.php';
     <div class="form-row">
         <label>
             Prix / jour (€)
-            <input type="number" step="0.01" min="0" name="prix_jour" value="<?= e($equipement['prix_jour'] ?? '') ?>" required>
+            <input type="number" name="prix_jour" value="<?= e($equipement['prix_jour'] ?? '') ?>">
         </label>
         <label>
             Quantité en stock
-            <input type="number" min="0" name="quantite_stock" value="<?= e($equipement['quantite_stock'] ?? '0') ?>" required>
+            <input type="number" name="quantite_stock" value="<?= e($equipement['quantite_stock'] ?? '0') ?>">
         </label>
         <label>
             Seuil d'alerte
-            <input type="number" min="0" name="seuil_alerte" value="<?= e($equipement['seuil_alerte'] ?? '1') ?>" required>
+            <input type="number" name="seuil_alerte" value="<?= e($equipement['seuil_alerte'] ?? '1') ?>">
         </label>
     </div>
     <div class="form-row">
@@ -38,7 +38,7 @@ require APP_ROOT . '/views/layout/admin_header.php';
         </label>
         <label>
             Catégorie
-            <select name="categorie_id" required>
+            <select name="categorie_id">
                 <option value="">Choisir</option>
                 <?php foreach ($categories as $cat): ?>
                     <option value="<?= (int) $cat['id'] ?>" <?= ((int) ($equipement['categorie_id'] ?? 0) === (int) $cat['id']) ? 'selected' : '' ?>>

@@ -9,7 +9,7 @@ require APP_ROOT . '/views/layout/admin_header.php';
         <h2><?= $edit ? 'Modifier' : 'Nouvelle catégorie' ?></h2>
         <label>
             Nom
-            <input type="text" name="nom" value="<?= e($edit['nom'] ?? '') ?>" required>
+            <input type="text" name="nom" value="<?= e($edit['nom'] ?? '') ?>">
         </label>
         <label>
             Description
