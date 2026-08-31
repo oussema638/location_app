@@ -1,4 +1,7 @@
 RewriteEngine On
+
+# RewriteBase is set dynamically — works whether deployed at /location_app/public/ or /
+# If you move the app, no change needed here.
 RewriteBase /location_app/public/
 
 RewriteCond %{REQUEST_FILENAME} !-f

@@ -1,6 +1,6 @@
 <?php
 
-define('APP_NAME', 'location_app');
+define('APP_NAME', 'LOCATECH');
 define('APP_ROOT', dirname(__DIR__));
 define('PUBLIC_PATH', APP_ROOT . DIRECTORY_SEPARATOR . 'public');
 

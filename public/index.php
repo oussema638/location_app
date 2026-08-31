@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+header('Content-Type: text/html; charset=UTF-8');
+
 if (PHP_SAPI === 'cli-server') {
     $file = __DIR__ . parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
     if (is_file($file)) {
@@ -76,6 +78,10 @@ try {
             $location->cancel();
             break;
 
+        case preg_match('#^locations/pdf/(\d+)$#', $route, $m) === 1:
+            $location->pdf((int) $m[1]);
+            break;
+
         case $route === 'admin':
             $location->dashboard();
             break;
@@ -84,6 +90,24 @@ try {
             $equipement->adminIndex();
             break;
 
+        // ── Admin equipment forms & actions (singular /equipement/) ──────────
+        case $route === 'admin/equipement/add':
+            $equipement->adminForm();
+            break;
+
+        case preg_match('#^admin/equipement/edit/(\d+)$#', $route, $m) === 1:
+            $equipement->adminForm((int) $m[1]);
+            break;
+
+        case $route === 'admin/equipement/save' && $method === 'POST':
+            $equipement->save();
+            break;
+
+        case $route === 'admin/equipement/delete' && $method === 'POST':
+            $equipement->delete();
+            break;
+
+        // ── Legacy plural aliases (kept for backwards compatibility) ─────────
         case $route === 'admin/equipements/create':
             $equipement->adminForm();
             break;

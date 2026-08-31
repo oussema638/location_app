@@ -23,9 +23,15 @@ require APP_ROOT . '/views/layout/header.php';
                         <td><?= e($row['date_debut']) ?> → <?= e($row['date_fin']) ?></td>
                         <td><span class="badge statut-<?= e(str_replace(' ', '-', $row['statut'])) ?>"><?= e($row['statut']) ?></span></td>
                         <td><?= number_format((float) $row['montant_total'], 2, ',', ' ') ?> €</td>
-                        <td>
+                        <td class="actions-cell">
+                            <a class="btn btn-ghost"
+                               href="<?= e(url('locations/pdf/' . (int) $row['id'])) ?>"
+                               target="_blank"
+                               title="Télécharger le contrat PDF">
+                                📄 PDF
+                            </a>
                             <?php if (in_array($row['statut'], ['en attente', 'confirmée'], true)): ?>
-                                <form method="post" action="<?= e(url('locations/cancel')) ?>" onsubmit="return confirm('Annuler cette location ?');">
+                                <form method="post" action="<?= e(url('locations/cancel')) ?>" onsubmit="return confirm('Annuler cette location ?');" style="display:inline;">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
                                     <button class="btn btn-ghost" type="submit">Annuler</button>

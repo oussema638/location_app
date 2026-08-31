@@ -1,0 +1,4 @@
+# Deny direct execution of any script file uploaded here
+<FilesMatch "\.(php|php\d|phtml|phar|cgi|pl|py|sh|exe|bat)$">
+    Require all denied
+</FilesMatch>

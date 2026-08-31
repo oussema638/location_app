@@ -183,6 +183,26 @@ class LocationController
         ]);
     }
 
+    public function pdf(int $id): void
+    {
+        require_login();
+
+        $row = $this->location->findById($id);
+
+        if ($row === null) {
+            flash('error', 'Location introuvable.');
+            redirect('mes-locations');
+        }
+
+        // Clients can only download their own contracts; staff can download any
+        if (!has_role('agent', 'responsable') && (int) $row['utilisateur_id'] !== (int) current_user()['id']) {
+            flash('error', 'Accès refusé.');
+            redirect('mes-locations');
+        }
+
+        view('front/location_pdf', ['location' => $row]);
+    }
+
     private function datesValides(string $debut, string $fin): bool
     {
         if ($debut === '' || $fin === '') {

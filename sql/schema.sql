@@ -1,4 +1,4 @@
--- location_app / location_db
+-- LOCATECH / location_db
 CREATE DATABASE IF NOT EXISTS location_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -34,6 +34,7 @@ CREATE TABLE equipement (
     seuil_alerte INT NOT NULL DEFAULT 1,
     etat ENUM('disponible', 'en location', 'en maintenance', 'endommagé') NOT NULL DEFAULT 'disponible',
     categorie_id INT UNSIGNED NOT NULL,
+    photo VARCHAR(255) NULL DEFAULT NULL,
     CONSTRAINT fk_equipement_categorie
         FOREIGN KEY (categorie_id) REFERENCES categorie(id)
         ON UPDATE CASCADE

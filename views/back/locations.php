@@ -37,6 +37,10 @@ require APP_ROOT . '/views/layout/admin_header.php';
                 <td><?= number_format((float) $row['frais_additionnels'], 2, ',', ' ') ?> €</td>
                 <td><?= e($row['statut']) ?></td>
                 <td>
+                    <a class="btn btn-ghost"
+                       href="<?= e(url('locations/pdf/' . (int) $row['id'])) ?>"
+                       target="_blank"
+                       title="Contrat PDF">📄</a>
                     <form method="post" action="<?= e(url('admin/locations/update')) ?>" class="inline-form">
                         <?= csrf_field() ?>
                         <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">

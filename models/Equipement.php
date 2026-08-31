@@ -59,9 +59,9 @@ class Equipement
     {
         $stmt = $this->db->prepare(
             'INSERT INTO equipement
-                (nom, description, prix_jour, quantite_stock, seuil_alerte, etat, categorie_id)
+                (nom, description, prix_jour, quantite_stock, seuil_alerte, etat, categorie_id, photo)
              VALUES
-                (:nom, :description, :prix_jour, :quantite_stock, :seuil_alerte, :etat, :categorie_id)'
+                (:nom, :description, :prix_jour, :quantite_stock, :seuil_alerte, :etat, :categorie_id, :photo)'
         );
         $stmt->execute($this->mapData($data));
         return (int) $this->db->lastInsertId();
@@ -77,7 +77,8 @@ class Equipement
                 quantite_stock = :quantite_stock,
                 seuil_alerte = :seuil_alerte,
                 etat = :etat,
-                categorie_id = :categorie_id
+                categorie_id = :categorie_id,
+                photo = :photo
              WHERE id = :id'
         );
         $params = $this->mapData($data);
@@ -142,13 +143,14 @@ class Equipement
     private function mapData(array $data): array
     {
         return [
-            'nom' => $data['nom'],
-            'description' => $data['description'] ?? null,
-            'prix_jour' => $data['prix_jour'],
+            'nom'            => $data['nom'],
+            'description'    => $data['description'] ?? null,
+            'prix_jour'      => $data['prix_jour'],
             'quantite_stock' => (int) $data['quantite_stock'],
-            'seuil_alerte' => (int) ($data['seuil_alerte'] ?? 1),
-            'etat' => $data['etat'] ?? 'disponible',
-            'categorie_id' => (int) $data['categorie_id'],
+            'seuil_alerte'   => (int) ($data['seuil_alerte'] ?? 1),
+            'etat'           => $data['etat'] ?? 'disponible',
+            'categorie_id'   => (int) $data['categorie_id'],
+            'photo'          => $data['photo'] ?? null,
         ];
     }
 }
