@@ -51,43 +51,124 @@ class Location
         return $stmt->fetchAll();
     }
 
-    public function hasOverlap(int $equipementId, string $debut, string $fin, ?int $exceptId = null): bool
-    {
-        $sql = 'SELECT id FROM location
-                WHERE equipement_id = :equipement_id
-                  AND statut IN (\'en attente\', \'confirmée\', \'en cours\')
-                  AND date_debut <= :date_fin
-                  AND date_fin >= :date_debut';
+    /**
+     * Return the number of units still available for booking during the
+     * requested date window (i.e. stock minus already-booked quantity).
+     * Useful for building informative error messages in the controller.
+     */
+    public function availableForPeriod(
+        int    $equipementId,
+        string $debut,
+        string $fin,
+        ?int   $exceptId = null
+    ): int {
+        $sql = "SELECT COALESCE(SUM(l.quantite), 0) AS total_reserved
+                FROM location l
+                WHERE l.equipement_id = :equipement_id
+                  AND l.statut IN ('en attente', 'confirmee', 'en cours')
+                  AND l.date_debut <= :date_fin
+                  AND l.date_fin   >= :date_debut";
+
         $params = [
             'equipement_id' => $equipementId,
-            'date_debut' => $debut,
-            'date_fin' => $fin,
+            'date_debut'    => $debut,
+            'date_fin'      => $fin,
         ];
         if ($exceptId !== null) {
-            $sql .= ' AND id != :id';
-            $params['id'] = $exceptId;
+            $sql .= ' AND l.id != :except_id';
+            $params['except_id'] = $exceptId;
         }
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return (bool) $stmt->fetch();
+        $totalReserved = (int) $stmt->fetchColumn();
+
+        $stockStmt = $this->db->prepare(
+            'SELECT quantite_stock FROM equipement WHERE id = :id'
+        );
+        $stockStmt->execute(['id' => $equipementId]);
+        $quantiteStock = (int) $stockStmt->fetchColumn();
+
+        return max(0, $quantiteStock - $totalReserved);
+    }
+
+    /**
+     * Check whether the requested quantity can be accommodated for the given
+     * equipment over the requested date window.
+     *
+     * Logic:
+     *   total_reserved = SUM(quantite) of active locations that overlap the window
+     *   available      = quantite_stock - total_reserved
+     *   blocked        = requested_qty > available
+     *
+     * Returns TRUE  → booking is blocked (not enough stock for this period).
+     * Returns FALSE → booking is allowed.
+     *
+     * @param int         $equipementId  Equipment to check.
+     * @param string      $debut         Start date (Y-m-d).
+     * @param string      $fin           End date   (Y-m-d).
+     * @param int         $requestedQty  Quantity the client wants to book.
+     * @param int|null    $exceptId      Location row to exclude (useful for edits).
+     */
+    public function hasOverlap(
+        int     $equipementId,
+        string  $debut,
+        string  $fin,
+        int     $requestedQty = 1,
+        ?int    $exceptId     = null
+    ): bool {
+        // ── 1. Sum quantities already booked in the overlapping window ────────
+        $sql = "SELECT COALESCE(SUM(l.quantite), 0) AS total_reserved
+                FROM location l
+                WHERE l.equipement_id = :equipement_id
+                  AND l.statut IN ('en attente', 'confirmee', 'en cours')
+                  AND l.date_debut <= :date_fin
+                  AND l.date_fin   >= :date_debut";
+
+        $params = [
+            'equipement_id' => $equipementId,
+            'date_debut'    => $debut,
+            'date_fin'      => $fin,
+        ];
+
+        if ($exceptId !== null) {
+            $sql .= ' AND l.id != :except_id';
+            $params['except_id'] = $exceptId;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $totalReserved = (int) $stmt->fetchColumn();
+
+        // ── 2. Fetch current physical stock ───────────────────────────────────
+        $stockStmt = $this->db->prepare(
+            'SELECT quantite_stock FROM equipement WHERE id = :id'
+        );
+        $stockStmt->execute(['id' => $equipementId]);
+        $quantiteStock = (int) $stockStmt->fetchColumn();
+
+        // ── 3. Decide ─────────────────────────────────────────────────────────
+        $available = $quantiteStock - $totalReserved;
+        return $requestedQty > $available;  // TRUE = blocked
     }
 
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
             'INSERT INTO location
-                (date_debut, date_fin, statut, montant_total, frais_additionnels, utilisateur_id, equipement_id)
+                (date_debut, date_fin, statut, montant_total, frais_additionnels, utilisateur_id, equipement_id, quantite)
              VALUES
-                (:date_debut, :date_fin, :statut, :montant_total, :frais_additionnels, :utilisateur_id, :equipement_id)'
+                (:date_debut, :date_fin, :statut, :montant_total, :frais_additionnels, :utilisateur_id, :equipement_id, :quantite)'
         );
         $stmt->execute([
-            'date_debut' => $data['date_debut'],
-            'date_fin' => $data['date_fin'],
-            'statut' => $data['statut'] ?? 'en attente',
-            'montant_total' => $data['montant_total'],
-            'frais_additionnels' => $data['frais_additionnels'] ?? 0,
-            'utilisateur_id' => $data['utilisateur_id'],
-            'equipement_id' => $data['equipement_id'],
+            'date_debut'          => $data['date_debut'],
+            'date_fin'            => $data['date_fin'],
+            'statut'              => $data['statut'] ?? 'en attente',
+            'montant_total'       => $data['montant_total'],
+            'frais_additionnels'  => $data['frais_additionnels'] ?? 0,
+            'utilisateur_id'      => $data['utilisateur_id'],
+            'equipement_id'       => $data['equipement_id'],
+            'quantite'            => max(1, (int) ($data['quantite'] ?? 1)),
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -96,24 +177,26 @@ class Location
     {
         $stmt = $this->db->prepare(
             'UPDATE location SET
-                date_debut = :date_debut,
-                date_fin = :date_fin,
-                statut = :statut,
-                montant_total = :montant_total,
-                frais_additionnels = :frais_additionnels,
-                utilisateur_id = :utilisateur_id,
-                equipement_id = :equipement_id
+                date_debut           = :date_debut,
+                date_fin             = :date_fin,
+                statut               = :statut,
+                montant_total        = :montant_total,
+                frais_additionnels   = :frais_additionnels,
+                utilisateur_id       = :utilisateur_id,
+                equipement_id        = :equipement_id,
+                quantite             = :quantite
              WHERE id = :id'
         );
         return $stmt->execute([
-            'date_debut' => $data['date_debut'],
-            'date_fin' => $data['date_fin'],
-            'statut' => $data['statut'],
-            'montant_total' => $data['montant_total'],
+            'date_debut'         => $data['date_debut'],
+            'date_fin'           => $data['date_fin'],
+            'statut'             => $data['statut'],
+            'montant_total'      => $data['montant_total'],
             'frais_additionnels' => $data['frais_additionnels'] ?? 0,
-            'utilisateur_id' => $data['utilisateur_id'],
-            'equipement_id' => $data['equipement_id'],
-            'id' => $id,
+            'utilisateur_id'     => $data['utilisateur_id'],
+            'equipement_id'      => $data['equipement_id'],
+            'quantite'           => max(1, (int) ($data['quantite'] ?? 1)),
+            'id'                 => $id,
         ]);
     }
 
@@ -157,7 +240,7 @@ class Location
     public function countByStatut(): array
     {
         $stmt = $this->db->query(
-            'SELECT statut, COUNT(*) AS total FROM location GROUP BY statut'
+            'SELECT statut, COUNT(*) AS total FROM location GROUP BY statut ORDER BY statut'
         );
         return $stmt->fetchAll();
     }
@@ -167,7 +250,7 @@ class Location
         $stmt = $this->db->query(
             "SELECT COALESCE(SUM(montant_total), 0) AS total
              FROM location
-             WHERE statut IN ('confirmée', 'en cours', 'terminée')"
+             WHERE statut IN ('confirmee', 'en cours', 'terminee')"
         );
         return (float) $stmt->fetchColumn();
     }
@@ -175,11 +258,13 @@ class Location
     private function baseSelect(): string
     {
         return 'SELECT l.*,
+                       l.quantite,
                        u.nom AS utilisateur_nom,
                        u.prenom AS utilisateur_prenom,
                        u.email AS utilisateur_email,
                        e.nom AS equipement_nom,
                        e.prix_jour,
+                       e.quantite_stock,
                        e.etat AS equipement_etat
                 FROM location l
                 INNER JOIN utilisateur u ON u.id = l.utilisateur_id

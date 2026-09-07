@@ -21,5 +21,10 @@ define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
 define('ROLES', ['client', 'agent', 'responsable']);
-define('EQUIPEMENT_ETATS', ['disponible', 'en location', 'en maintenance', 'endommagé']);
-define('LOCATION_STATUTS', ['en attente', 'confirmée', 'en cours', 'terminée', 'annulée']);
+
+// Location statut values — plain ASCII, no accents.
+// Display labels with accents are produced by statut_label() in helpers.php.
+define('LOCATION_STATUTS', ['en attente', 'confirmee', 'en cours', 'terminee', 'annulee']);
+
+// Equipment etat values — plain ASCII.
+define('EQUIPEMENT_ETATS',  ['disponible', 'en location', 'en maintenance', 'endommage']);

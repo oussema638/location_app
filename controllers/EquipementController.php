@@ -98,16 +98,16 @@ class EquipementController
 
         $id = (int) ($_POST['id'] ?? 0);
 
-        // Collect and sanitise
-        $nom          = trim($_POST['nom']            ?? '');
-        $description  = trim($_POST['description']    ?? '');
-        $prixJour     = (float) ($_POST['prix_jour']  ?? 0);
-        $stock        = max(0, (int) ($_POST['quantite_stock'] ?? 0));
-        $seuil        = max(0, (int) ($_POST['seuil_alerte']   ?? 1));
-        $etat         = $_POST['etat']         ?? 'disponible';
-        $categorieId  = (int) ($_POST['categorie_id'] ?? 0);
+        // ── Collect and sanitise text fields ──────────────────────────────────
+        $nom         = trim($_POST['nom']            ?? '');
+        $description = trim($_POST['description']    ?? '');
+        $prixJour    = (float) ($_POST['prix_jour']  ?? 0);
+        $stock       = max(0, (int) ($_POST['quantite_stock'] ?? 0));
+        $seuil       = max(0, (int) ($_POST['seuil_alerte']   ?? 1));
+        $etat        = $_POST['etat']                ?? 'disponible';
+        $categorieId = (int) ($_POST['categorie_id'] ?? 0);
 
-        // Validate
+        // ── Validate required fields ──────────────────────────────────────────
         if ($nom === '') {
             flash('error', 'Le nom est obligatoire.');
             redirect($id > 0 ? 'admin/equipement/edit/' . $id : 'admin/equipement/add');
@@ -124,21 +124,37 @@ class EquipementController
             $etat = 'disponible';
         }
 
-        // Photo — optional, never blocks save
-        $photo = null;
+        // ── Photo management ──────────────────────────────────────────────────
+        // Load the existing stored photo path (null for a new record)
+        $currentPhoto = null;
         if ($id > 0) {
-            $existing = $this->equipement->findById($id);
-            $photo    = $existing['photo'] ?? null;
-        }
-        if (isset($_POST['remove_photo']) && $_POST['remove_photo'] === '1') {
-            $this->deletePhotoFile($photo);
-            $photo = null;
-        }
-        $photoResult = $this->handlePhotoUpload($id);
-        if ($photoResult['error'] === null && $photoResult['path'] !== null) {
-            $photo = $photoResult['path'];
+            $existing     = $this->equipement->findById($id);
+            $currentPhoto = $existing['photo'] ?? null;
         }
 
+        $deleteRequested = isset($_POST['delete_image']) && $_POST['delete_image'] === '1';
+        $newUpload       = $this->handlePhotoUpload($id);
+
+        if ($newUpload['error'] !== null) {
+            // Upload attempted but failed — tell the user and stop
+            flash('error', $newUpload['error']);
+            redirect($id > 0 ? 'admin/equipement/edit/' . $id : 'admin/equipement/add');
+        }
+
+        if ($newUpload['path'] !== null) {
+            // A valid new file was uploaded → delete the old one and use the new path
+            $this->deletePhotoFile($currentPhoto);
+            $photo = $newUpload['path'];
+        } elseif ($deleteRequested) {
+            // No new file, but admin explicitly wants to remove the current photo
+            $this->deletePhotoFile($currentPhoto);
+            $photo = null;
+        } else {
+            // No upload, no delete → keep whatever was there
+            $photo = $currentPhoto;
+        }
+
+        // ── Persist ───────────────────────────────────────────────────────────
         $data = [
             'nom'            => $nom,
             'description'    => $description,
@@ -239,35 +255,35 @@ class EquipementController
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /**
-     * Handles the $_FILES['photo'] upload.
+     * Handles the $_FILES['image'] upload (field name="image" in the form).
      * Returns ['path' => string|null, 'error' => string|null].
-     * 'path' is null when no file was submitted (not an error).
+     * 'path' is null when no file was submitted — that is NOT an error.
+     * 'error' is non-null only when a file WAS submitted but is invalid.
      */
     private function handlePhotoUpload(int $equipementId): array
     {
-        $file = $_FILES['photo'] ?? null;
+        $file = $_FILES['image'] ?? null;
 
-        // No file field submitted or empty upload — not an error
-        if ($file === null || $file['error'] === UPLOAD_ERR_NO_FILE) {
+        // No file field in the request, or the user left it blank — not an error
+        if ($file === null || !isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
             return ['path' => null, 'error' => null];
         }
 
         if ($file['error'] !== UPLOAD_ERR_OK) {
-            return ['path' => null, 'error' => 'Erreur lors du téléversement de l\'image (code ' . $file['error'] . ').'];
+            return ['path' => null, 'error' => 'Erreur lors du téléversement (code ' . $file['error'] . ').'];
         }
 
         if ($file['size'] > self::MAX_FILE_SIZE) {
             return ['path' => null, 'error' => 'L\'image ne doit pas dépasser 2 Mo.'];
         }
 
-        // Validate MIME via finfo (not Content-Type which is user-controlled)
+        // Validate MIME via finfo — never trust Content-Type from the browser
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mime  = $finfo->file($file['tmp_name']);
         if (!in_array($mime, self::ALLOWED_MIME, true)) {
-            return ['path' => null, 'error' => 'Format d\'image non autorisé. Utilisez JPEG, PNG, WebP ou GIF.'];
+            return ['path' => null, 'error' => 'Format non autorisé. Utilisez JPEG, PNG, WebP ou GIF.'];
         }
 
-        // Build a safe, unique filename
         $ext      = match ($mime) {
             'image/jpeg' => 'jpg',
             'image/png'  => 'png',
@@ -275,7 +291,9 @@ class EquipementController
             'image/gif'  => 'gif',
             default      => 'jpg',
         };
-        $filename = 'equip_' . ($equipementId ?: uniqid('', true)) . '_' . time() . '.' . $ext;
+
+        // Unique, filesystem-safe filename
+        $filename = 'equip_' . ($equipementId ?: uniqid('new_', true)) . '_' . time() . '.' . $ext;
         $dest     = self::UPLOAD_DIR . $filename;
 
         if (!is_dir(self::UPLOAD_DIR)) {
@@ -286,7 +304,7 @@ class EquipementController
             return ['path' => null, 'error' => 'Impossible d\'enregistrer le fichier sur le serveur.'];
         }
 
-        // Return path relative to public/ so url() can build the src
+        // Return path relative to public/ — url() will prepend BASE_URL
         return ['path' => 'uploads/' . $filename, 'error' => null];
     }
 

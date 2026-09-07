@@ -50,6 +50,7 @@ CREATE TABLE location (
     frais_additionnels DECIMAL(10,2) NOT NULL DEFAULT 0,
     utilisateur_id INT UNSIGNED NOT NULL,
     equipement_id INT UNSIGNED NOT NULL,
+    quantite SMALLINT UNSIGNED NOT NULL DEFAULT 1,
     CONSTRAINT fk_location_utilisateur
         FOREIGN KEY (utilisateur_id) REFERENCES utilisateur(id)
         ON UPDATE CASCADE

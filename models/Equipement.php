@@ -135,7 +135,7 @@ class Equipement
     public function countByEtat(): array
     {
         $stmt = $this->db->query(
-            'SELECT etat, COUNT(*) AS total FROM equipement GROUP BY etat'
+            'SELECT etat, COUNT(*) AS total FROM equipement GROUP BY etat ORDER BY etat'
         );
         return $stmt->fetchAll();
     }

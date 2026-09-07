@@ -31,7 +31,7 @@ require APP_ROOT . '/views/layout/header.php';
                     <?php foreach (EQUIPEMENT_ETATS as $st): ?>
                         <?php if ($st === 'disponible') continue; ?>
                         <option value="<?= e($st) ?>" <?= ($etat === $st) ? 'selected' : '' ?>>
-                            <?= e($st) ?>
+                            <?= e(etat_label($st)) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

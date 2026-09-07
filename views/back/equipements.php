@@ -9,7 +9,7 @@ require APP_ROOT . '/views/layout/admin_header.php';
 <?php if ($alertes): ?>
     <div class="alert alert-error">
         ⚠️ <?= count($alertes) ?> équipement<?= count($alertes) > 1 ? 's' : '' ?> sous le seuil d'alerte :
-        <?= implode(', ', array_map(fn($a) => e($a['nom']), $alertes)) ?>.
+        <?= implode(', ', array_map(fn($a) => '<strong>' . e($a['nom']) . '</strong>', $alertes)) ?>.
     </div>
 <?php endif; ?>
 
@@ -17,7 +17,7 @@ require APP_ROOT . '/views/layout/admin_header.php';
     <table>
         <thead>
             <tr>
-                <th style="width:64px">Photo</th>
+                <th style="width:60px">Photo</th>
                 <th>Nom</th>
                 <th>Catégorie</th>
                 <th>Prix/jour</th>
@@ -31,6 +31,7 @@ require APP_ROOT . '/views/layout/admin_header.php';
         <?php foreach ($equipements as $item): ?>
             <?php $lowStock = (int) $item['quantite_stock'] <= (int) $item['seuil_alerte']; ?>
             <tr class="<?= $lowStock ? 'row-alert' : '' ?>">
+
                 <td>
                     <?php if (!empty($item['photo'])): ?>
                         <img src="<?= e(url($item['photo'])) ?>"
@@ -38,19 +39,22 @@ require APP_ROOT . '/views/layout/admin_header.php';
                              class="admin-thumb"
                              loading="lazy">
                     <?php else: ?>
-                        <span class="no-photo" title="Pas de photo">—</span>
+                        <span class="no-photo">—</span>
                     <?php endif; ?>
                 </td>
-                <td><?= e($item['nom']) ?></td>
+
+                <td style="font-weight:600"><?= e($item['nom']) ?></td>
                 <td><?= e($item['categorie_nom']) ?></td>
-                <td><?= number_format((float) $item['prix_jour'], 2, ',', ' ') ?> €</td>
-                <td class="<?= $lowStock ? 'text-warn' : '' ?>"><?= (int) $item['quantite_stock'] ?></td>
-                <td><?= (int) $item['seuil_alerte'] ?></td>
-                <td>
-                    <span class="badge etat-<?= e(str_replace(' ', '-', $item['etat'])) ?>">
-                        <?= e($item['etat']) ?>
-                    </span>
+                <td style="color:var(--orange);font-weight:700">
+                    <?= number_format((float) $item['prix_jour'], 2, ',', ' ') ?> €
                 </td>
+                <td class="<?= $lowStock ? 'text-warn' : '' ?>" style="font-weight:700">
+                    <?= (int) $item['quantite_stock'] ?>
+                </td>
+                <td style="color:var(--muted-light)"><?= (int) $item['seuil_alerte'] ?></td>
+
+                <td><?= etat_badge($item['etat']) ?></td>
+
                 <td class="actions">
                     <a class="btn btn-ghost"
                        href="<?= e(url('admin/equipement/edit/' . (int) $item['id'])) ?>">
@@ -61,7 +65,7 @@ require APP_ROOT . '/views/layout/admin_header.php';
                           onsubmit="return confirm('Supprimer « <?= e(addslashes($item['nom'])) ?> » ? Cette action est irréversible.');">
                         <?= csrf_field() ?>
                         <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
-                        <button class="btn btn-ghost btn-danger" type="submit">🗑 Supprimer</button>
+                        <button class="btn btn-ghost btn-danger" type="submit">🗑</button>
                     </form>
                 </td>
             </tr>
@@ -72,25 +76,5 @@ require APP_ROOT . '/views/layout/admin_header.php';
         </tbody>
     </table>
 </div>
-
-<style>
-    .admin-thumb {
-        width: 56px; height: 42px;
-        object-fit: cover;
-        border-radius: 4px;
-        border: 1px solid var(--line);
-        display: block;
-    }
-    .no-photo { color: var(--muted); font-size: 1.1rem; }
-    .text-warn { color: var(--bad); font-weight: 700; }
-    .empty-row { text-align: center; color: var(--muted); padding: 2rem; }
-    .btn-danger { color: var(--bad); border-color: var(--bad); }
-    .btn-danger:hover { background: var(--bad); color: white; }
-    /* État badges */
-    .etat-disponible      { background: #d1fae5; color: #065f46; }
-    .etat-en-location     { background: #dbeafe; color: #1e40af; }
-    .etat-en-maintenance  { background: #fef3c7; color: #92400e; }
-    .etat-endommag\E9     { background: #fee2e2; color: #991b1b; }
-</style>
 
 <?php require APP_ROOT . '/views/layout/admin_footer.php'; ?>

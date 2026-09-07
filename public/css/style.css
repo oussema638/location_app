@@ -421,8 +421,18 @@ ul  { list-style: none; padding: 0; margin: 0; }
 .etat-disponible     { background: rgba(34,197,94,.14);  color: #4ADE80; border-color: rgba(34,197,94,.25);   }
 .etat-en-location    { background: var(--indigo-dim);    color: #93C5FD; border-color: rgba(59,130,246,.25);  }
 .etat-en-maintenance { background: rgba(245,158,11,.14); color: #FCD34D; border-color: rgba(245,158,11,.25);  }
+.etat-endommage,
 .etat-endommagé,
 [class*="etat-endomma"] { background: rgba(244,63,94,.14); color: #FDA4AF; border-color: rgba(244,63,94,.25); }
+
+/* Location statut badges */
+.statut-en-attente { background: rgba(245,158,11,.15); color: #FCD34D; border-color: rgba(245,158,11,.30); }
+.statut-confirmee  { background: rgba(34,197,94,.15);  color: #4ADE80; border-color: rgba(34,197,94,.30);  }
+.statut-en-cours   { background: rgba(59,130,246,.15); color: #93C5FD; border-color: rgba(59,130,246,.30); }
+.statut-terminee   { background: rgba(148,163,184,.15);color: #94A3B8; border-color: rgba(148,163,184,.30);}
+.statut-annulee    { background: rgba(244,63,94,.15);  color: #FDA4AF; border-color: rgba(244,63,94,.30);  }
+.statut-unknown,
+.etat-unknown      { background: rgba(148,163,184,.12);color: #94A3B8; border-color: rgba(148,163,184,.20);}
 
 /* ── 8. Price ──────────────────────────────────────────────── */
 .price {
